@@ -24,6 +24,8 @@ sshpass -p "$RTR_PASS" ssh -tt \
 -o UserKnownHostsFile=/dev/null \
 "$RTR_USER@$RTR_IP" << 'EOF'
 
+configure terminal
+
 hostname hq-rtr
 ip domain-name au-team.irpo
 ip name-server 10.10.100.2
@@ -74,6 +76,7 @@ ip nat source dynamic inside-to-outside pool VLAN100 overload interface isp
 ip nat source dynamic inside-to-outside pool VLAN200 overload interface isp
 ip nat source dynamic inside-to-outside pool VLAN999 overload interface isp
 
+end
 write memory
 exit
 EOF
