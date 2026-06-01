@@ -24,6 +24,8 @@ sshpass -p "$RTR_PASS" ssh -tt \
 -o UserKnownHostsFile=/dev/null \
 "$RTR_USER@$RTR_IP" << 'EOF'
 
+en
+
 configure terminal
 
 hostname hq-rtr
