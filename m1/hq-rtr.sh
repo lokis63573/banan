@@ -7,18 +7,12 @@ RTR_USER="net_admin"
 RTR_PASS="P@ssw0rd"
 
 if ! command -v expect >/dev/null 2>&1; then
-    echo "[+] expect не найден, устанавливаю..."
     apt-get update
     apt-get install -y expect
 fi
 
-if ! command -v expect >/dev/null 2>&1; then
-    echo "[-] expect не установился"
-    exit 1
-fi
-
 expect << EOF
-set timeout 20
+set timeout 30
 
 spawn ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $RTR_USER@$RTR_IP
 
@@ -27,21 +21,18 @@ expect {
         send "yes\r"
         exp_continue
     }
-    "password:" {
+    "Password:" {
         send "$RTR_PASS\r"
-    }
-    "User Access Verification" {
-        exp_continue
-    }
-    "ecorouter>" {
-        send "enable\r"
     }
 }
 
-expect "ecorouter#"
-send "configure terminal\r"
+expect "ecorouter>"
+send "enable\r"
 
-expect "*config*"
+expect "#"
+send "configure\r"
+
+expect "#"
 send "hostname hq-rtr\r"
 send "ip domain-name au-team.irpo\r"
 send "ip name-server 10.10.100.2\r"
