@@ -26,17 +26,9 @@ sshpass -p "$RTR_PASS" ssh -tt \
 
 enable
 configure terminal
-
 hostname hq-rtr
 ip domain-name au-team.irpo
-
-username net_admin
-password P@ssw0rd
-role admin
-exit
-end
 write memory
 exit
 EOF
-
 echo "===== HQ-RTR DONE ====="
