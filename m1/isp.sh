@@ -8,8 +8,6 @@ timedatectl set-timezone Europe/Moscow
 
 sed -i 's/^HOSTNAME=.*/HOSTNAME=isp/' /etc/sysconfig/network
 
-exec bash
-
 iptables -t nat -A POSTROUTING -s 172.16.1.0/28 -o ens3 -j MASQUERADE
 iptables -t nat -A POSTROUTING -s 172.16.2.0/28 -o ens3 -j MASQUERADE
 
@@ -19,3 +17,4 @@ systemctl enable --now iptables || true
 echo "===== ISP DONE ====="
 hostname
 iptables -t nat -L -n -v
+exec bash
