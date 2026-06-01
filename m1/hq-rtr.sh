@@ -7,8 +7,14 @@ RTR_USER="net_admin"
 RTR_PASS="P@ssw0rd"
 
 if ! command -v expect >/dev/null 2>&1; then
+    echo "[+] expect не найден, устанавливаю..."
     apt-get update
     apt-get install -y expect
+fi
+
+if ! command -v expect >/dev/null 2>&1; then
+    echo "[-] expect не установился"
+    exit 1
 fi
 
 expect << EOF
@@ -21,7 +27,7 @@ expect {
         send "yes\r"
         exp_continue
     }
-    "Password:" {
+    -re "(?i)password:" {
         send "$RTR_PASS\r"
     }
 }
@@ -85,10 +91,11 @@ send "ip nat source dynamic inside-to-outside pool VLAN999 overload interface is
 
 send "end\r"
 expect "#"
+
 send "write memory\r"
 expect "#"
-send "exit\r"
 
+send "exit\r"
 expect eof
 EOF
 
