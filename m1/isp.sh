@@ -6,9 +6,7 @@ hostnamectl set-hostname isp
 
 timedatectl set-timezone Europe/Moscow
 
-cat > /etc/sysconfig/network <<EOF
-HOSTNAME=isp
-EOF
+sed -i 's/^HOSTNAME=.*/HOSTNAME=isp/' /etc/sysconfig/network
 
 exec bash
 
