@@ -27,7 +27,7 @@ expect {
         send "yes\r"
         exp_continue
     }
-    -re "(?i)password:" {
+    "Password:" {
         send "$RTR_PASS\r"
     }
 }
