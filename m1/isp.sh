@@ -17,6 +17,8 @@ systemctl enable --now iptables || true
 echo "===== ISP DONE ====="
 hostname
 iptables -t nat -L -n -v
-ip -c -br a
+echo
+echo "===== INTERFACES ====="
+ip -br a
 
 exec bash
