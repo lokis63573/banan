@@ -44,19 +44,19 @@ echo "[+] Роутеры доступны"
 echo
 echo "===== DOWNLOAD RTR SCRIPT ====="
 
-curl -L https://raw.githubusercontent.com/lokis63573/banan/main/m1/rtrs.sh -o /root/rtrs.sh
+curl -L https://raw.githubusercontent.com/lokis63573/banan/main/m1/hq-rtr.sh -o /root/hq-rtr.sh
 
-if [ ! -s /root/rtrs.sh ]; then
-    echo "[-] Не удалось скачать /root/rtrs.sh"
+if [ ! -s /root/hq-rtr.sh ]; then
+    echo "[-] Не удалось скачать /root/hq-rtr.sh"
     exit 1
 fi
 
-chmod +x /root/rtrs.sh
+chmod +x /root/hq-rtr.sh
 
 echo
 echo "===== START RTR CONFIG ====="
 
-bash /root/rtrs.sh
+bash /root/hq-rtr.sh
 
 echo
 echo "===== MODULE 1 ISP + RTR DONE ====="
