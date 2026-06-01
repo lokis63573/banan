@@ -15,10 +15,19 @@ iptables-save > /etc/sysconfig/iptables
 systemctl enable --now iptables || true
 
 echo "===== ISP DONE ====="
+echo
+echo "===== HOSTNAME ====="
 hostname
-iptables -t nat -L -n -v
+
+echo
+echo "===== TIME ====="
+timedatectl | grep "Time zone"
+
 echo
 echo "===== INTERFACES ====="
 ip -br a
 
-exec bash
+echo
+echo "===== NAT ====="
+iptables -t nat -L -n -v
+
