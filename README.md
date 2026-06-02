@@ -2,6 +2,15 @@
 # это демо syчки, мы сделаем все что бы было хорошо
 _____________________________________________________________________________________________________________________________________________________________________________________
 
+На случай не правильного написания ip
+( не правильного вбивания ip)
+```
+rm /etc/net/ifaces/ens3/*имя файлы
+```
+
+
+
+
 
 # заходим на isp и пишем
 
@@ -19,7 +28,10 @@ echo nameserver 10.10.100.2 > /etc/net/ifaces/ens3/resolv.conf
 echo nameserver 77.88.8.8 > /etc/net/ifaces/ens3/resolv.conf
 systemctl restart network
 ```
-
+проверьте что все правильно
+```
+ping 10.10.100.1
+```
 # заходим на br-srv
 ```
 echo 10.20.20.2/28 > /etc/net/ifaces/ens3/ipv4address 
@@ -28,6 +40,12 @@ echo nameserver 10.10.100.2 > /etc/net/ifaces/ens3/resolv.conf
 echo nameserver 77.88.8.8 > /etc/net/ifaces/ens3/resolv.conf
 systemctl restart network
 ```
+
+проверьте что все правильно
+```
+ping 10.20.20.1
+```
+
 # заходим на br-cli
 настраиваем ip адрес
 hostnamectl set-hostname br-cli.au-team.irpo
