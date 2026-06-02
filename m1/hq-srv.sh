@@ -103,4 +103,17 @@ grep '^Banner' /etc/openssh/sshd_config
 cat /etc/openssh/banner
 
 echo
+echo "===== DOWNLOAD AND RUN REMOTE HOSTS SCRIPT ====="
+
+curl -L https://raw.githubusercontent.com/lokis63573/banan/main/m1/remote-hosts.sh -o /root/remote-hosts.sh
+
+if [ ! -s /root/remote-hosts.sh ]; then
+    echo "[-] Не удалось скачать remote-hosts.sh"
+    exit 1
+fi
+
+chmod +x /root/remote-hosts.sh
+bash /root/remote-hosts.sh
+
+echo
 echo "===== HQ-SRV BIND PATCH DONE ====="
