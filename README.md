@@ -6,13 +6,13 @@ ________________________________________________________________________________
 # заходим на isp и пишем
 
 
-```bash
+```
 curl -L https://raw.githubusercontent.com/lokis63573/banan/main/m1/isp.sh -o /root/isp.sh
 chmod +x /root/isp.sh
 bash /root/isp.sh
 ```
 # заходим на hq-srv
-```bash
+```
 echo 10.10.100.2/27 > /etc/net/ifaces/ens3/ipv4address 
 echo default via 10.10.100.1 > /etc/net/ifaces/ens3/ipv4route   
 echo nameserver 10.10.100.2 > /etc/net/ifaces/ens3/resolv.conf
@@ -21,7 +21,7 @@ systemctl restart network
 ```
 
 # заходим на br-srv
-```bash
+```
 echo 10.20.20.2/28 > /etc/net/ifaces/ens3/ipv4address 
 echo default via 10.20.20.1 > /etc/net/ifaces/ens3/ipv4route   
 echo nameserver 10.10.100.2 > /etc/net/ifaces/ens3/resolv.conf
@@ -77,7 +77,7 @@ exec bash
  <img width="974" height="276" alt="image" src="https://github.com/user-attachments/assets/e66cea07-a149-4c7b-a803-f43d358f275f" />
 
 # заходим на hq-srv
-```bash
+```
  curl -L https://raw.githubusercontent.com/lokis63573/banan/main/m1/hq-srv.sh -o /root/hq-srv.sh
 chmod +x /root/hq-srv.sh
 bash /root/hq-srv.sh
@@ -86,7 +86,7 @@ bash /root/hq-srv.sh
 ______________________________________________________________________________________________________________________________________________________
 
 # На isp прописываем вот это:
-```bash
+```
 curl -L https://raw.githubusercontent.com/lokis63573/banan/main/m2/isp.sh -o /root/isp.sh
 chmod +x /root/isp.sh
 bash /root/isp.sh
