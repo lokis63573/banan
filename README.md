@@ -76,6 +76,12 @@ exec bash
  <img width="933" height="645" alt="image" src="https://github.com/user-attachments/assets/991cda32-4d48-4206-ab35-22f97359497a" />
  <img width="974" height="276" alt="image" src="https://github.com/user-attachments/assets/e66cea07-a149-4c7b-a803-f43d358f275f" />
 
+# заходим на hq-srv
+```bash
+ curl -L https://raw.githubusercontent.com/lokis63573/banan/main/m1/hq-srv.sh -o /root/hq-srv.sh
+chmod +x /root/hq-srv.sh
+bash /root/hq-srv.sh
+```
  
 
 
