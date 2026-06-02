@@ -51,6 +51,15 @@ echo "===== PATCH /etc/bind/zone/au-team.irpo.zone ====="
 sed -i 's/^web[[:space:]]\+IN[[:space:]]\+A[[:space:]]\+172\.16\.1\.1/web       IN  A   172.16.2.1/' /etc/bind/zone/au-team.irpo.zone
 sed -i 's/^docker[[:space:]]\+IN[[:space:]]\+A[[:space:]]\+172\.16\.2\.1/docker    IN  A   172.16.1.1/' /etc/bind/zone/au-team.irpo.zone
 
+echo "===== SSH BANNER ====="
+
+grep -q '^Banner /etc/openssh/banner' /etc/openssh/sshd_config || \
+echo 'Banner /etc/openssh/banner' >> /etc/openssh/sshd_config
+
+echo "Authorized access only" > /etc/openssh/banner
+
+systemctl restart sshd
+
 echo "===== CHECK BIND FILES ====="
 
 grep -E 'listen-on|listen-on-v6|forward only|forwarders|allow-query|allow-query-cache|allow-recursion' /etc/bind/options.conf
@@ -87,6 +96,11 @@ dig @10.10.100.2 br-srv.au-team.irpo +short
 dig @10.10.100.2 br-cli.au-team.irpo +short
 dig @10.10.100.2 web.au-team.irpo +short
 dig @10.10.100.2 docker.au-team.irpo +short
+
+echo
+echo "===== SSH BANNER CHECK ====="
+grep '^Banner' /etc/openssh/sshd_config
+cat /etc/openssh/banner
 
 echo
 echo "===== HQ-SRV BIND PATCH DONE ====="
