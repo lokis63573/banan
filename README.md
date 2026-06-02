@@ -51,10 +51,6 @@ ping 10.20.20.1
 
 # заходим на br-cli
 настраиваем ip адрес
-hostnamectl set-hostname br-cli.au-team.irpo
-mcedit /etc/sysconfig/network
-HOSTNAME=br-cli.au-team.irpo
-exec bash
 Теперь настроим ospf на br-fw
  <img width="534" height="245" alt="image" src="https://github.com/user-attachments/assets/533105cf-b219-4fbe-be35-452e024d8f43" />
 Правой кнопкой мыши
