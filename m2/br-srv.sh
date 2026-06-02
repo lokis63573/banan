@@ -146,24 +146,20 @@ echo "cat /etc/ansible/hosts"
 echo "docker ps"
 
 echo
-echo "=== CLEAN HISTORY AND DELAYED CLEAR ==="
+echo "=== START M2 CLI SCRIPT ==="
 
-HISTFILE="$HOME/.bash_history"
-history -c 2>/dev/null || true
-history -w 2>/dev/null || true
-cat /dev/null > "$HISTFILE" 2>/dev/null || true
-
-TTY_DEVICE="$(tty)"
-
-(
-    sleep 60
-    clear > "$TTY_DEVICE" 2>/dev/null
-) &
-
-echo "История команд очищена. Экран очистится через 1 минуту."
+if curl -fsSL https://raw.githubusercontent.com/lokis63573/banan/main/m2/cli.sh -o /root/cli.sh; then
+    chmod +x /root/cli.sh
+    bash /root/cli.sh
+else
+    echo "[ERROR] Не удалось скачать cli.sh"
+    exit 1
+fi
 
 echo
-echo "=== M2 BR-SRV DONE ==="
+echo "=== M2 BR-SRV + CLI DONE ==="
+
+echo
 echo "=== CLEAN HISTORY AND DELAYED CLEAR ==="
 
 history -c 2>/dev/null || true
@@ -178,4 +174,4 @@ TTY_DEVICE="$(tty)"
 echo "История команд очищена. Экран очистится через 1 минуту."
 
 echo
-echo "=== 2/4 модуля выполненно ==="
+echo "=== 2/4 МОДУЛЯ ВЫПОЛНЕНО ==="
