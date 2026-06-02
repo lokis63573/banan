@@ -173,18 +173,4 @@ echo "cat /etc/auto.nfs"
 echo "systemctl status autofs --no-pager"
 
 echo
-echo "=== CLEAN HISTORY AND DELAYED CLEAR ==="
-
-history -c 2>/dev/null || true
-
-TTY_DEVICE="$(tty)"
-
-(
-    sleep 60
-    clear > "$TTY_DEVICE" 2>/dev/null
-) &
-
-echo "История команд очищена. Экран очистится через 1 минуту."
-
-echo
 echo "=== M2 CLI CONFIG DONE ==="
