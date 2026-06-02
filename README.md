@@ -67,10 +67,19 @@ exec bash
  <img width="420" height="192" alt="image" src="https://github.com/user-attachments/assets/79ab7674-4945-4bd1-bf6d-115f1b7f7cf3" />
 
 Дальше в том же меню ищите «маршрутизация» >>  «ospf»
+
 Делаете как я 
 
  <img width="760" height="672" alt="image" src="https://github.com/user-attachments/assets/c44c3cfa-94c9-4145-8ecf-51653c9f2d2b" />
  <img width="497" height="238" alt="image" src="https://github.com/user-attachments/assets/3ef72c80-6485-42dc-9a78-b6578d7799d3" />
+ <img width="835" height="675" alt="image" src="https://github.com/user-attachments/assets/a16793f6-b538-4d7c-8dc5-17b5be5cdbae" />
+
+ Далее проверяем!!!
+ <img width="933" height="645" alt="image" src="https://github.com/user-attachments/assets/991cda32-4d48-4206-ab35-22f97359497a" />
+ <img width="974" height="276" alt="image" src="https://github.com/user-attachments/assets/e66cea07-a149-4c7b-a803-f43d358f275f" />
+
+ 
+
 
  
 
