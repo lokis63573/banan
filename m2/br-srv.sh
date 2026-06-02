@@ -146,14 +146,12 @@ echo "cat /etc/ansible/hosts"
 echo "docker ps"
 
 echo
-echo "=== CLEAN HISTORY ==="
+echo "=== CLEAN HISTORY AND DELAYED CLEAR ==="
 
 HISTFILE="$HOME/.bash_history"
-
 history -c 2>/dev/null || true
 history -w 2>/dev/null || true
-rm -f "$HISTFILE" 2>/dev/null || true
-touch "$HISTFILE" 2>/dev/null || true
+cat /dev/null > "$HISTFILE" 2>/dev/null || true
 
 TTY_DEVICE="$(tty)"
 
@@ -162,8 +160,7 @@ TTY_DEVICE="$(tty)"
     clear > "$TTY_DEVICE" 2>/dev/null
 ) &
 
-echo "[OK] History cleaned"
-echo "[OK] Screen will clear in 60 seconds"
+echo "История команд очищена. Экран очистится через 1 минуту."
 
 echo
 echo "=== M2 BR-SRV DONE ==="
