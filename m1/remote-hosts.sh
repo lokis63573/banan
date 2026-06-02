@@ -19,10 +19,10 @@ run_root_host() {
 
     echo "===== CONFIG ROOT HOST $HOSTNAME ($IP) ====="
 
-    sshpass -p "$ROOT_PASS" ssh -tt \
+    sshpass -p "$ROOT_PASS" ssh \
     -o StrictHostKeyChecking=no \
     -o UserKnownHostsFile=/dev/null \
-    "$ROOT_USER@$IP" << EOF
+    "$ROOT_USER@$IP" bash -s << EOF
 hostnamectl set-hostname $HOSTNAME
 
 if grep -q '^HOSTNAME=' /etc/sysconfig/network; then
@@ -33,7 +33,6 @@ fi
 
 hostname
 grep '^HOSTNAME=' /etc/sysconfig/network
-exit
 EOF
 }
 
@@ -43,33 +42,24 @@ run_br_srv() {
 
     echo "===== CONFIG BR-SRV $HOSTNAME ($IP) ====="
 
-    sshpass -p "$BR_SRV_PASS" ssh -tt \
+    sshpass -p "$BR_SRV_PASS" ssh \
     -o StrictHostKeyChecking=no \
     -o UserKnownHostsFile=/dev/null \
-    "$BR_SRV_USER@$IP" << EOF
-su -
-$BR_SRV_PASS
+    "$BR_SRV_USER@$IP" bash -s << EOF
+echo "$BR_SRV_PASS" | sudo -S hostnamectl set-hostname $HOSTNAME
 
-hostnamectl set-hostname $HOSTNAME
+echo "$BR_SRV_PASS" | sudo -S sh -c "if grep -q '^HOSTNAME=' /etc/sysconfig/network; then sed -i 's/^HOSTNAME=.*/HOSTNAME=$HOSTNAME/' /etc/sysconfig/network; else echo 'HOSTNAME=$HOSTNAME' >> /etc/sysconfig/network; fi"
 
-if grep -q '^HOSTNAME=' /etc/sysconfig/network; then
-    sed -i 's/^HOSTNAME=.*/HOSTNAME=$HOSTNAME/' /etc/sysconfig/network
-else
-    echo 'HOSTNAME=$HOSTNAME' >> /etc/sysconfig/network
-fi
+echo "$BR_SRV_PASS" | sudo -S sh -c "grep -q '^Banner /etc/openssh/banner' /etc/openssh/sshd_config || echo 'Banner /etc/openssh/banner' >> /etc/openssh/sshd_config"
 
-grep -q '^Banner /etc/openssh/banner' /etc/openssh/sshd_config || echo 'Banner /etc/openssh/banner' >> /etc/openssh/sshd_config
+echo "$BR_SRV_PASS" | sudo -S sh -c "echo 'Authorized access only' > /etc/openssh/banner"
 
-echo "Authorized access only" > /etc/openssh/banner
-systemctl restart sshd
+echo "$BR_SRV_PASS" | sudo -S systemctl restart sshd
 
 hostname
 grep '^HOSTNAME=' /etc/sysconfig/network
 grep '^Banner' /etc/openssh/sshd_config
 cat /etc/openssh/banner
-
-exit
-exit
 EOF
 }
 
