@@ -7,8 +7,11 @@ ________________________________________________________________________________
 ```
 rm /etc/net/ifaces/ens3/*имя файлы
 ```
+После того как он спросит удалить написать 
 
-
+```
+yes
+```
 
 
 
@@ -109,6 +112,9 @@ curl -L https://raw.githubusercontent.com/lokis63573/banan/main/m2/isp.sh -o /ro
 chmod +x /root/isp.sh
 bash /root/isp.sh
 ```
+
+# Заходим 
+
  
 
 
