@@ -6,8 +6,6 @@ echo "=== M2 ISP START ==="
 echo "[1] Настройка Chrony"
 
 sed -i '/^local stratum/d' /etc/chrony.conf
-
-grep -q "^local stratum 5" /etc/chrony.conf || \
 echo "local stratum 5" >> /etc/chrony.conf
 
 chronyc makestep >/dev/null 2>&1 || true
@@ -105,3 +103,30 @@ nginx -t >/dev/null 2>&1 \
 
 echo
 echo "=== M2 ISP DONE ==="
+
+echo
+echo "=== START M2 RTR SCRIPT ==="
+
+curl -L https://raw.githubusercontent.com/lokis63573/banan/main/m2/rtr.sh -o /root/rtr.sh
+chmod +x /root/rtr.sh
+bash /root/rtr.sh
+
+echo
+echo "=== M2 ISP + RTR DONE ==="
+
+echo
+echo "=== CLEAN HISTORY AND DELAYED CLEAR ==="
+
+HISTFILE="$HOME/.bash_history"
+history -c 2>/dev/null || true
+history -w 2>/dev/null || true
+cat /dev/null > "$HISTFILE" 2>/dev/null || true
+
+TTY_DEVICE="$(tty)"
+
+(
+    sleep 60
+    clear > "$TTY_DEVICE" 2>/dev/null
+) &
+
+echo "История команд очищена. Экран очистится через 1 минуту."
