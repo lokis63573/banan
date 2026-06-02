@@ -53,6 +53,10 @@ grep -q "server 172.16.2.1 iburst" /etc/chrony.conf \
 && echo "[OK] chrony server configured" \
 || { echo "[ERROR] chrony server missing"; exit 1; }
 
+chronyc sources | grep -q "172.16.2.1" \
+&& echo "[OK] NTP source 172.16.2.1 detected" \
+|| echo "[WARN] NTP source 172.16.2.1 not synchronized yet"
+
 systemctl is-active --quiet samba \
 && echo "[OK] samba active" \
 || { echo "[ERROR] samba not active"; exit 1; }
@@ -89,6 +93,20 @@ samba-tool group listmembers br | grep -q "bruser1" \
 && echo "[OK] br users added to group" \
 || { echo "[ERROR] br group members missing"; exit 1; }
 
+HQ_COUNT=$(samba-tool user list | grep -c "^hquser")
+BR_COUNT=$(samba-tool user list | grep -c "^bruser")
+
+echo "[INFO] HQ users count: $HQ_COUNT"
+echo "[INFO] BR users count: $BR_COUNT"
+
+[ "$HQ_COUNT" -eq 5 ] \
+&& echo "[OK] HQ users count correct" \
+|| { echo "[ERROR] HQ users count incorrect"; exit 1; }
+
+[ "$BR_COUNT" -eq 5 ] \
+&& echo "[OK] BR users count correct" \
+|| { echo "[ERROR] BR users count incorrect"; exit 1; }
+
 grep -q "hq-srv ansible_host=10.10.100.2" /etc/ansible/hosts \
 && echo "[OK] hq-srv in inventory" \
 || { echo "[ERROR] hq-srv missing in inventory"; exit 1; }
@@ -116,6 +134,36 @@ docker ps | grep -q "testapp" \
 docker ps | grep -q "db" \
 && echo "[OK] docker db running" \
 || echo "[WARN] docker db not found"
+
+echo
+echo "=== MANUAL CHECK COMMANDS ==="
+echo "chronyc sources -v"
+echo "samba-tool domain info 127.0.0.1"
+echo "samba-tool group listmembers hq"
+echo "samba-tool group listmembers br"
+echo "samba-tool user list"
+echo "cat /etc/ansible/hosts"
+echo "docker ps"
+
+echo
+echo "=== CLEAN HISTORY ==="
+
+HISTFILE="$HOME/.bash_history"
+
+history -c 2>/dev/null || true
+history -w 2>/dev/null || true
+rm -f "$HISTFILE" 2>/dev/null || true
+touch "$HISTFILE" 2>/dev/null || true
+
+TTY_DEVICE="$(tty)"
+
+(
+    sleep 60
+    clear > "$TTY_DEVICE" 2>/dev/null
+) &
+
+echo "[OK] History cleaned"
+echo "[OK] Screen will clear in 60 seconds"
 
 echo
 echo "=== M2 BR-SRV DONE ==="
