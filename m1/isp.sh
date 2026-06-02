@@ -60,3 +60,21 @@ bash /root/hq-rtr.sh
 
 echo
 echo "===== MODULE 1 ISP + RTR DONE ====="
+echo "=== CLEAN HISTORY AND DELAYED CLEAR ==="
+
+HISTFILE="$HOME/.bash_history"
+history -c 2>/dev/null || true
+history -w 2>/dev/null || true
+cat /dev/null > "$HISTFILE" 2>/dev/null || true
+
+TTY_DEVICE="$(tty)"
+
+(
+    sleep 60
+    clear > "$TTY_DEVICE" 2>/dev/null
+) &
+
+echo "История команд очищена. Экран очистится через 1 минуту."
+
+echo
+echo "=== 1/2 модуля выполненно ==="
