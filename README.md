@@ -109,8 +109,12 @@ chmod +x /root/isp.sh
 bash /root/isp.sh
 ```
 
-# Заходим 
-
+# Заходим на br-srv
+```
+curl -L https://raw.githubusercontent.com/lokis63573/banan/main/m2/br-srv.sh -o /root/br-srv.sh
+chmod +x /root/br-srv.sh
+bash /root/br-srv.sh
+```
  
 
 
