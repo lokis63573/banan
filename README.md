@@ -4,9 +4,7 @@ ________________________________________________________________________________
 
 
 # заходим на isp и пишем
-```text
-https://github.com/lokis63573/banan
-```
+
 
 ```bash
 curl -L https://raw.githubusercontent.com/lokis63573/banan/main/m1/isp.sh -o /root/isp.sh
