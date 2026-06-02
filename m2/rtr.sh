@@ -36,7 +36,7 @@ expect {
     }
 }
 
-expect "ecorouter>"
+expect ">"
 send "enable\r"
 
 expect "#"
@@ -78,7 +78,7 @@ expect {
     }
 }
 
-expect "ecorouter>"
+expect ">"
 send "enable\r"
 
 expect "#"
