@@ -3,15 +3,15 @@ set -e
 
 echo "=== M2 ISP START ==="
 
-echo "[1/4] Chrony"
-chronyc makestep || true
+echo "[1] Настройка Chrony"
+chronyc makestep >/dev/null 2>&1 || true
 systemctl restart chronyd
 
-echo "[2/4] htpasswd"
+echo "[2] Создание пароля WEB для nginx"
 printf "WEB:$(openssl passwd -apr1 'P@ssw0rd')\n" > /etc/nginx/.htpasswd
 chmod 644 /etc/nginx/.htpasswd
 
-echo "[3/4] nginx reverse proxy"
+echo "[3] Настройка reverse proxy nginx"
 cat > /etc/nginx/sites-available.d/reverse-proxy.conf <<'EOF'
 server {
     listen 80;
@@ -41,7 +41,7 @@ server {
 }
 EOF
 
-echo "[4/4] Restart nginx"
+echo "[4] Проверка конфига и перезапуск nginx"
 nginx -t
 systemctl restart nginx
 
