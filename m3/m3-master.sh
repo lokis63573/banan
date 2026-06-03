@@ -77,7 +77,7 @@ copy_to_root() {
 
 expect <<EOF
 set timeout 120
-spawn scp -P ${PORT} -O -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$SRC" ${ROOT_USER}@${IP}:${DST}
+spawn scp -P ${PORT} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$SRC" ${ROOT_USER}@${IP}:${DST}
 expect {
     "yes/no" {
         send "yes\r"
@@ -99,7 +99,7 @@ copy_from_root() {
 
 expect <<EOF
 set timeout 120
-spawn scp -P ${PORT} -O -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${ROOT_USER}@${IP}:${SRC} "$DST"
+spawn scp -P ${PORT} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${ROOT_USER}@${IP}:${SRC} "$DST"
 expect {
     "yes/no" {
         send "yes\r"
@@ -142,7 +142,7 @@ copy_to_cli() {
 
 expect <<EOF
 set timeout 120
-spawn scp -P ${PORT} -O -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$SRC" ${CLI_USER}@${IP}:${DST}
+spawn scp -P ${PORT} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$SRC" ${CLI_USER}@${IP}:${DST}
 expect {
     "yes/no" {
         send "yes\r"
@@ -183,6 +183,12 @@ echo "[OK] Samba domain available"
 CSV_USERS=$(( $(wc -l < "$CSV") - 1 ))
 echo "[INFO] Users in CSV: $CSV_USERS"
 
+SAMBA_USERS_COUNT=$(samba-tool user list | wc -l)
+IMPORTED_DOT_USERS_COUNT=$(samba-tool user list | grep -E '^[A-Za-z]+\.[A-Za-z]+$' | wc -l || true)
+
+echo "[INFO] Samba users total: $SAMBA_USERS_COUNT"
+echo "[INFO] Imported FirstName.LastName users: $IMPORTED_DOT_USERS_COUNT"
+
 CREATED=0
 SKIPPED=0
 ERRORS=0
@@ -196,46 +202,61 @@ reset_samba_password() {
         --newpassword='P@ssw0rd1' >/dev/null 2>&1 || true
 }
 
-while IFS=';' read -r firstname lastname role phone dep street zip city country password
-do
-    [ -z "$firstname" ] && continue
-    [ -z "$lastname" ] && continue
+if [ "$SAMBA_USERS_COUNT" -gt 299 ] || [ "$IMPORTED_DOT_USERS_COUNT" -ge "$CSV_USERS" ]; then
+    echo "[OK] Users already imported, skipping user import"
 
-    USERNAME="${firstname}.${lastname}"
+    for USER in Malachi.Alexander Nelle.Alford Meredith.Arnold Stuart.York; do
+        if samba-tool user list | grep -Fxq "$USER"; then
+            reset_samba_password "$USER"
+            echo "[OK] $USER exists, password updated"
+        else
+            echo "[WARN] $USER not found"
+        fi
+    done
+else
+    echo "[INFO] Users count less than 300, starting import"
 
-    if samba-tool user list | grep -Fxq "$USERNAME"; then
-        reset_samba_password "$USERNAME"
-        echo "[SKIP] $USERNAME already exists, password updated"
-        SKIPPED=$((SKIPPED+1))
-        continue
-    fi
+    while IFS=';' read -r firstname lastname role phone dep street zip city country password
+    do
+        [ -z "$firstname" ] && continue
+        [ -z "$lastname" ] && continue
 
-    if samba-tool user create "$USERNAME" 'P@ssw0rd1' \
-        --given-name="$firstname" \
-        --surname="$lastname"; then
-        reset_samba_password "$USERNAME"
-        echo "[OK] Created: $USERNAME"
-        CREATED=$((CREATED+1))
-    else
-        echo "[ERROR] Failed: $USERNAME"
-        ERRORS=$((ERRORS+1))
-    fi
+        USERNAME="${firstname}.${lastname}"
 
-done < <(tail -n +2 "$CSV")
+        if samba-tool user list | grep -Fxq "$USERNAME"; then
+            reset_samba_password "$USERNAME"
+            echo "[SKIP] $USERNAME already exists, password updated"
+            SKIPPED=$((SKIPPED+1))
+            continue
+        fi
 
-echo
-echo "=== TASK 1 SUMMARY ==="
-echo "Created: $CREATED"
-echo "Skipped: $SKIPPED"
-echo "Errors:  $ERRORS"
+        if samba-tool user create "$USERNAME" 'P@ssw0rd1' \
+            --given-name="$firstname" \
+            --surname="$lastname"; then
+            reset_samba_password "$USERNAME"
+            echo "[OK] Created: $USERNAME"
+            CREATED=$((CREATED+1))
+        else
+            echo "[ERROR] Failed: $USERNAME"
+            ERRORS=$((ERRORS+1))
+        fi
 
-for USER in Malachi.Alexander Nelle.Alford Meredith.Arnold Stuart.York; do
-    if samba-tool user list | grep -Fxq "$USER"; then
-        echo "[OK] $USER exists"
-    else
-        echo "[WARN] $USER not found"
-    fi
-done
+    done < <(tail -n +2 "$CSV")
+
+    echo
+    echo "=== TASK 1 SUMMARY ==="
+    echo "Created: $CREATED"
+    echo "Skipped: $SKIPPED"
+    echo "Errors:  $ERRORS"
+
+    for USER in Malachi.Alexander Nelle.Alford Meredith.Arnold Stuart.York; do
+        if samba-tool user list | grep -Fxq "$USER"; then
+            echo "[OK] $USER exists"
+        else
+            echo "[WARN] $USER not found"
+        fi
+    done
+fi
 
 # =========================
 # TASK 2 REMOTE SCRIPTS
