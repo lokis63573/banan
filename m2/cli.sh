@@ -9,21 +9,12 @@ ROOT_PASS="toor"
 HQ_CLI_IP="10.10.200.2"
 BR_CLI_IP="10.20.30.2"
 
-DOMAIN="au-team.irpo"
-DOMAIN_ADMIN="Administrator"
-DOMAIN_PASS="P@ssw0rd"
-
 if ! command -v expect >/dev/null 2>&1; then
     echo "expect не найден, устанавливаю..."
     apt-get install -y expect || {
         apt-get update || true
         apt-get install -y expect
     }
-fi
-
-if ! command -v expect >/dev/null 2>&1; then
-    echo "expect не установился"
-    exit 1
 fi
 
 configure_client() {
@@ -37,7 +28,7 @@ configure_client() {
     echo "===== CONFIG $NAME ====="
 
 expect << EOF
-set timeout 120
+set timeout 60
 
 spawn ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${ROOT_USER}@${IP}
 
@@ -53,8 +44,6 @@ expect {
 
 expect "#"
 
-send "echo 'Chrony configure'\r"
-expect "#"
 send "sed -i '/^server /d; /^pool /d' /etc/chrony.conf\r"
 expect "#"
 send "echo 'server ${NTP} iburst' >> /etc/chrony.conf\r"
@@ -62,8 +51,6 @@ expect "#"
 send "systemctl restart chronyd\r"
 expect "#"
 
-send "echo 'Create sshuser for Ansible'\r"
-expect "#"
 send "id sshuser >/dev/null 2>&1 || useradd -m sshuser\r"
 expect "#"
 send "echo 'sshuser:P@ssw0rd' | chpasswd\r"
@@ -80,26 +67,7 @@ expect "#"
 send "visudo -cf /etc/sudoers.d/sshuser\r"
 expect "#"
 
-send "echo 'Rejoin domain ${DOMAIN}'\r"
-expect "#"
-send "systemctl stop sssd 2>/dev/null || true\r"
-expect "#"
-send "echo '${DOMAIN_PASS}' | realm leave ${DOMAIN} -U ${DOMAIN_ADMIN} 2>/dev/null || true\r"
-expect "#"
-send "rm -f /var/lib/sss/db/* 2>/dev/null || true\r"
-expect "#"
-send "systemctl restart sssd 2>/dev/null || true\r"
-expect "#"
-send "echo '${DOMAIN_PASS}' | realm join ${DOMAIN} -U ${DOMAIN_ADMIN} --membership-software=samba --client-software=sssd 2>/tmp/realm_join_error.log || cat /tmp/realm_join_error.log\r"
-expect "#"
-send "systemctl restart sssd 2>/dev/null || true\r"
-expect "#"
-
-send "echo 'PAM access configure'\r"
-expect "#"
 send "sed -i '/- : ${DENY_GROUP} : ALL/d' /etc/security/access.conf\r"
-expect "#"
-send "sed -i '/- : (${DENY_GROUP}) : ALL/d' /etc/security/access.conf\r"
 expect "#"
 send "sed -i '/- : @${DENY_GROUP} : ALL/d' /etc/security/access.conf\r"
 expect "#"
@@ -110,13 +78,9 @@ send "grep -q 'pam_access.so' /etc/pam.d/login || echo 'account required pam_acc
 expect "#"
 send "grep -q 'pam_access.so' /etc/pam.d/sshd || echo 'account required pam_access.so' >> /etc/pam.d/sshd\r"
 expect "#"
-send "grep -q 'pam_access.so' /etc/pam.d/system-auth || echo 'account required pam_access.so' >> /etc/pam.d/system-auth 2>/dev/null || true\r"
-expect "#"
 send "systemctl restart sshd 2>/dev/null || true\r"
 expect "#"
 
-send "echo 'Autofs NFS configure'\r"
-expect "#"
 send "mkdir -p /mnt/nfs\r"
 expect "#"
 send "grep -q '^/mnt/nfs ' /etc/auto.master || echo '/mnt/nfs /etc/auto.nfs --timeout=60' >> /etc/auto.master\r"
@@ -129,8 +93,6 @@ send "systemctl restart autofs\r"
 expect "#"
 
 if { "${NEED_HQ_SUDO}" == "yes" } {
-    send "echo 'HQ limited sudo configure'\r"
-    expect "#"
     send "cat > /etc/sudoers.d/hq-limited <<'HQEOF'\r"
     send "%hq ALL=(root) NOPASSWD: /bin/cat, /bin/grep, /usr/bin/id\r"
     send "HQEOF\r"
@@ -140,23 +102,6 @@ if { "${NEED_HQ_SUDO}" == "yes" } {
     send "visudo -cf /etc/sudoers.d/hq-limited\r"
     expect "#"
 }
-
-send "echo 'Local checks'\r"
-expect "#"
-send "realm list | head -20\r"
-expect "#"
-send "grep pam_access /etc/pam.d/login\r"
-expect "#"
-send "grep pam_access /etc/pam.d/sshd\r"
-expect "#"
-send "tail -5 /etc/security/access.conf\r"
-expect "#"
-send "id sshuser\r"
-expect "#"
-send "systemctl is-active chronyd\r"
-expect "#"
-send "systemctl is-active autofs\r"
-expect "#"
 
 send "exit\r"
 expect eof
@@ -178,7 +123,7 @@ check_sshuser() {
     echo
     echo "===== CHECK SSHUSER $NAME ====="
 
-    expect << EOF
+expect << EOF
 set timeout 30
 
 spawn ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null sshuser@${IP}
@@ -219,32 +164,19 @@ check_sshuser "BR-CLI" "$BR_CLI_IP"
 echo
 echo "=== MANUAL CHECK COMMANDS ==="
 echo "На HQ-CLI:"
-echo "realm list"
-echo "id hquser1"
-echo "id bruser1"
-echo "su - hquser1"
-echo "su - bruser1"
 echo "grep pam_access /etc/pam.d/login"
 echo "grep pam_access /etc/pam.d/sshd"
 echo "tail -20 /etc/security/access.conf"
-echo "cat /etc/sudoers.d/hq-limited"
-echo "cat /etc/auto.master"
-echo "cat /etc/auto.nfs"
-echo "systemctl status autofs --no-pager"
+echo "su - hquser1"
+echo "su - bruser1"
 
 echo
 echo "На BR-CLI:"
-echo "realm list"
-echo "id bruser1"
-echo "id hquser1"
-echo "su - bruser1"
-echo "su - hquser1"
 echo "grep pam_access /etc/pam.d/login"
 echo "grep pam_access /etc/pam.d/sshd"
 echo "tail -20 /etc/security/access.conf"
-echo "cat /etc/auto.master"
-echo "cat /etc/auto.nfs"
-echo "systemctl status autofs --no-pager"
+echo "su - bruser1"
+echo "su - hquser1"
 
 echo
 echo "=== M2 CLI CONFIG DONE ==="
