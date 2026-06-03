@@ -26,7 +26,7 @@ configure_client() {
     local NAME="$1"
     local IP="$2"
     local NTP="$3"
-    local DENY_GROUP="$4"
+    local DENY_PREFIX="$4"
     local NEED_HQ_SUDO="$5"
 
     echo
@@ -72,13 +72,22 @@ expect "#"
 send "visudo -cf /etc/sudoers.d/sshuser\r"
 expect "#"
 
-send "sed -i '/- : ${DENY_GROUP} : ALL/d' /etc/security/access.conf\r"
+send "sed -i '/- : ${DENY_PREFIX}user[1-5] : ALL/d' /etc/security/access.conf\r"
 expect "#"
-send "sed -i '/- : @${DENY_GROUP} : ALL/d' /etc/security/access.conf\r"
+send "sed -i '/- : ${DENY_PREFIX} : ALL/d' /etc/security/access.conf\r"
 expect "#"
-send "sed -i '/- : (${DENY_GROUP}) : ALL/d' /etc/security/access.conf\r"
+send "sed -i '/- : @${DENY_PREFIX} : ALL/d' /etc/security/access.conf\r"
 expect "#"
-send "grep -q '^- : (${DENY_GROUP}) : ALL' /etc/security/access.conf || echo '- : (${DENY_GROUP}) : ALL' >> /etc/security/access.conf\r"
+send "sed -i '/- : (${DENY_PREFIX}) : ALL/d' /etc/security/access.conf\r"
+expect "#"
+
+send "cat >> /etc/security/access.conf <<'ACCESSEOF'\r"
+send "- : ${DENY_PREFIX}user1 : ALL\r"
+send "- : ${DENY_PREFIX}user2 : ALL\r"
+send "- : ${DENY_PREFIX}user3 : ALL\r"
+send "- : ${DENY_PREFIX}user4 : ALL\r"
+send "- : ${DENY_PREFIX}user5 : ALL\r"
+send "ACCESSEOF\r"
 expect "#"
 
 send "grep -q 'pam_access.so' /etc/pam.d/login || echo 'account required pam_access.so' >> /etc/pam.d/login\r"
@@ -142,7 +151,7 @@ expect {
 
 expect "#"
 send "reboot\r"
-expect eof
+sleep 2
 EOF
 
     echo "===== $NAME REBOOT SENT ====="
@@ -209,21 +218,17 @@ check_sshuser "BR-CLI" "$BR_CLI_IP"
 echo
 echo "=== MANUAL CHECK COMMANDS ==="
 echo "На HQ-CLI:"
+echo "tail -20 /etc/security/access.conf"
 echo "grep pam_access /etc/pam.d/login"
 echo "grep pam_access /etc/pam.d/sshd"
-echo "tail -20 /etc/security/access.conf"
-echo "id hquser1"
-echo "id bruser1"
 echo "su - hquser1"
 echo "su - bruser1"
 
 echo
 echo "На BR-CLI:"
+echo "tail -20 /etc/security/access.conf"
 echo "grep pam_access /etc/pam.d/login"
 echo "grep pam_access /etc/pam.d/sshd"
-echo "tail -20 /etc/security/access.conf"
-echo "id bruser1"
-echo "id hquser1"
 echo "su - bruser1"
 echo "su - hquser1"
 
