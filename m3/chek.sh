@@ -616,31 +616,53 @@ ls -la /opt
 echo "=== TASK 9: FAIL2BAN SSH ==="
 rpm -q fail2ban >/dev/null 2>&1 || apt-get install -y fail2ban || true
 
-LOGPATH="/var/log/secure"
-[ -f /var/log/auth.log ] && LOGPATH="/var/log/auth.log"
-[ -f /var/log/messages ] && LOGPATH="/var/log/messages"
+mkdir -p /etc/fail2ban/jail.d
 
-mkdir -p /etc/fail2ban
+# ALT: fail2ban часто падает, если logpath не существует.
+touch /var/log/secure
+chmod 600 /var/log/secure || true
 
-cat > /etc/fail2ban/jail.local <<EOF2
+# Убираем старые конфликтующие настройки sshd.
+rm -f /etc/fail2ban/jail.local
+rm -f /etc/fail2ban/jail.d/sshd.local
+rm -f /etc/fail2ban/jail.d/00-module3-sshd.conf
+
+cat > /etc/fail2ban/jail.local <<'EOF2'
 [DEFAULT]
 bantime = 60
 findtime = 60
 maxretry = 3
+backend = polling
 ignoreip = 127.0.0.1/8 10.10.0.0/16 10.20.0.0/16 169.254.0.0/16
 
 [sshd]
 enabled = true
 port = 2026
 filter = sshd
-logpath = $LOGPATH
+logpath = /var/log/secure
+backend = polling
 maxretry = 3
 findtime = 60
 bantime = 60
 EOF2
 
+fail2ban-client -x stop >/dev/null 2>&1 || true
+systemctl reset-failed fail2ban >/dev/null 2>&1 || true
 systemctl enable fail2ban >/dev/null 2>&1 || true
-systemctl restart fail2ban || systemctl start fail2ban || true
+
+if fail2ban-client -t >/dev/null 2>&1; then
+    echo "[OK] fail2ban config test passed"
+else
+    echo "[WARN] fail2ban config test failed"
+    fail2ban-client -t || true
+fi
+
+systemctl restart fail2ban || {
+    echo "[WARN] fail2ban restart failed, trying direct start"
+    fail2ban-client -x start || true
+}
+
+systemctl status fail2ban --no-pager 2>/dev/null | head -15 || true
 fail2ban-client status 2>/dev/null || true
 fail2ban-client status sshd 2>/dev/null || true
 
@@ -733,22 +755,45 @@ set -e
 
 echo "=== HQ-CLI: TASK 5 CUPS CLIENT ==="
 
-rpm -q cups >/dev/null 2>&1 || sudo apt-get install -y cups
-rpm -q cups-client >/dev/null 2>&1 || sudo apt-get install -y cups-client || true
+cat > /tmp/hq-cli-cups-root.sh <<'ROOTEOF'
+#!/bin/bash
+set -e
 
-sudo systemctl enable cups >/dev/null 2>&1 || true
-sudo systemctl restart cups >/dev/null 2>&1 || sudo systemctl start cups >/dev/null 2>&1 || true
+rpm -q cups >/dev/null 2>&1 || apt-get install -y cups
+rpm -q cups-client >/dev/null 2>&1 || apt-get install -y cups-client || true
+
+systemctl enable cups >/dev/null 2>&1 || true
+systemctl restart cups >/dev/null 2>&1 || systemctl start cups >/dev/null 2>&1 || true
 
 if lpstat -p HQ-PDF >/dev/null 2>&1; then
     echo "[SKIP] HQ-PDF already exists"
 else
-    sudo lpadmin -p HQ-PDF -E -v ipp://10.10.100.2:631/printers/Cups-PDF -m everywhere >/dev/null 2>&1 || \
-    sudo lpadmin -p HQ-PDF -E -v ipp://10.10.100.2:631/printers/Cups-PDF -m raw >/dev/null 2>&1 || true
+    lpadmin -p HQ-PDF -E -v ipp://10.10.100.2:631/printers/Cups-PDF -m everywhere >/dev/null 2>&1 ||     lpadmin -p HQ-PDF -E -v ipp://10.10.100.2:631/printers/Cups-PDF -m raw >/dev/null 2>&1 || true
 fi
 
-sudo lpadmin -d HQ-PDF >/dev/null 2>&1 || true
+if lpstat -p HQ-PDF >/dev/null 2>&1; then
+    lpadmin -d HQ-PDF >/dev/null 2>&1 || true
+elif lpstat -p Cups-PDF >/dev/null 2>&1; then
+    lpadmin -d Cups-PDF >/dev/null 2>&1 || true
+else
+    echo "[WARN] No HQ-PDF or Cups-PDF printer found"
+fi
+
 lpstat -p 2>/dev/null || true
 lpstat -d 2>/dev/null || true
+ROOTEOF
+
+chmod +x /tmp/hq-cli-cups-root.sh
+
+if [ "$(id -u)" -eq 0 ]; then
+    bash /tmp/hq-cli-cups-root.sh
+else
+    if command -v sudo >/dev/null 2>&1 && sudo -n true 2>/dev/null; then
+        sudo bash /tmp/hq-cli-cups-root.sh
+    else
+        echo 'toor' | su - root -c 'bash /tmp/hq-cli-cups-root.sh'
+    fi
+fi
 
 echo "=== HQ-CLI TASK 5 DONE ==="
 EOF
@@ -769,7 +814,7 @@ bash "$WORKDIR/br-srv-tasks-6-8.sh"
 
 echo "=== STEP 13: COPY AND RUN TASK 5 ON HQ-CLI ==="
 copy_to_cli "$WORKDIR/hq-cli-task-5.sh" "$HQ_CLI_IP" "$HQ_CLI_PORT" "/tmp/hq-cli-task-5.sh"
-run_ssh_cli "$HQ_CLI_IP" "$HQ_CLI_PORT" "sudo chmod +x /tmp/hq-cli-task-5.sh && sudo bash /tmp/hq-cli-task-5.sh" || true
+run_ssh_cli "$HQ_CLI_IP" "$HQ_CLI_PORT" "chmod +x /tmp/hq-cli-task-5.sh && bash /tmp/hq-cli-task-5.sh" || true
 
 echo "=== TASKS 5/6/8/9 DONE ==="
 
