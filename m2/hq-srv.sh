@@ -8,6 +8,25 @@ if [ "$(id -u)" -ne 0 ]; then
     exit 1
 fi
 
+apt_update_retry() {
+    local TRY
+
+    for TRY in 1 2 3; do
+        echo "[INFO] apt-get update attempt $TRY/3"
+
+        if apt-get update; then
+            echo "[OK] apt-get update success"
+            return 0
+        fi
+
+        echo "[WARN] apt-get update failed, retrying..."
+        sleep 5
+    done
+
+    echo "[ERROR] apt-get update failed after 3 attempts"
+    return 1
+}
+
 install_pkg_if_missing() {
     local PKG="$1"
 
@@ -17,10 +36,17 @@ install_pkg_if_missing() {
     fi
 
     echo "[INFO] $PKG not installed, trying apt-get install..."
-    apt-get install -y "$PKG" || {
-        echo "[WARN] $PKG не установился. Продолжаю выполнение скрипта."
+    if apt-get install -y "$PKG"; then
+        echo "[OK] $PKG installed"
         return 0
-    }
+    fi
+
+    echo "[WARN] $PKG install failed, running apt-get update with retries..."
+
+    apt_update_retry
+
+    echo "[INFO] Trying to install $PKG again..."
+    apt-get install -y "$PKG"
 }
 
 echo "[1] Настройка NFS"
@@ -155,12 +181,13 @@ mysql webdb -e "SHOW TABLES;" | grep -q "employees" \
 
 php -m | grep -Eq "mysqli|mysqlnd" \
 && echo "[OK] PHP mysql module detected" \
-|| echo "[WARN] PHP mysql module not detected"
+|| { echo "[ERROR] PHP mysql module missing"; exit 1; }
 
 if curl -s http://localhost | grep -Eq "Задание 7|База данных|DOCTYPE|html"; then
     echo "[OK] Web application responds"
 else
-    echo "[WARN] Web application response check failed"
+    echo "[ERROR] Web application response check failed"
+    exit 1
 fi
 
 echo
