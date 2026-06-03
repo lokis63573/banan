@@ -828,3 +828,4 @@ echo "WEB / P@ssw0rd для web.au-team.irpo"
 
 echo
 echo "=== MODULE 3 MASTER TASK 1 + TASK 2 DONE ==="
+echo "=== Не забываем попу мыть! ==="
