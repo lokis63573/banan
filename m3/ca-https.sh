@@ -1,18 +1,22 @@
 #!/bin/bash
 set -e
 
-echo "=== M3 TASK 2: AUTO CA + HTTPS WITHOUT HQ-CLI ==="
+echo "=== M3 TASK 2: CA + HTTPS AUTO SCRIPT ==="
 
 ROOT_USER="root"
 ROOT_PASS="toor"
 
 HQ_SRV_IP="10.10.100.2"
+HQ_SRV_PORT="2026"
+
 ISP_IP="172.16.1.1"
+ISP_PORT="22"
 
 WORKDIR="/root/m3-ca-work"
 mkdir -p "$WORKDIR"
 
-echo "=== INSTALL EXPECT IF NEEDED ==="
+echo
+echo "=== INSTALL EXPECT ==="
 
 if ! command -v expect >/dev/null 2>&1; then
     apt-get install -y expect || {
@@ -22,25 +26,95 @@ if ! command -v expect >/dev/null 2>&1; then
 fi
 
 if ! command -v expect >/dev/null 2>&1; then
-    echo "[ERROR] expect не установлен"
+    echo "[ERROR] expect not installed"
     exit 1
 fi
 
-echo "=== CREATE HQ-SRV REMOTE SCRIPT ==="
+run_ssh() {
+    local IP="$1"
+    local PORT="$2"
+    local CMD="$3"
 
-cat > "$WORKDIR/hq-ca-create.sh" <<'EOF'
+expect <<EOF
+set timeout 240
+spawn ssh -p ${PORT} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${ROOT_USER}@${IP} "$CMD"
+expect {
+    "yes/no" {
+        send "yes\r"
+        exp_continue
+    }
+    "assword:" {
+        send "${ROOT_PASS}\r"
+    }
+}
+expect eof
+EOF
+}
+
+copy_to() {
+    local SRC="$1"
+    local IP="$2"
+    local PORT="$3"
+    local DST="$4"
+
+expect <<EOF
+set timeout 120
+spawn scp -P ${PORT} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$SRC" ${ROOT_USER}@${IP}:"$DST"
+expect {
+    "yes/no" {
+        send "yes\r"
+        exp_continue
+    }
+    "assword:" {
+        send "${ROOT_PASS}\r"
+    }
+}
+expect eof
+EOF
+}
+
+copy_from() {
+    local IP="$1"
+    local PORT="$2"
+    local SRC="$3"
+    local DST="$4"
+
+expect <<EOF
+set timeout 120
+spawn scp -P ${PORT} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${ROOT_USER}@${IP}:"$SRC" "$DST"
+expect {
+    "yes/no" {
+        send "yes\r"
+        exp_continue
+    }
+    "assword:" {
+        send "${ROOT_PASS}\r"
+    }
+}
+expect eof
+EOF
+}
+
+echo
+echo "=== CREATE REMOTE SCRIPT FOR HQ-SRV ==="
+
+cat > "$WORKDIR/hq-create-ca.sh" <<'EOF'
 #!/bin/bash
 set -e
 
-echo "=== HQ-SRV: CREATE CA AND WEB CERTS ==="
+echo "=== HQ-SRV: CREATE CA AND CERTIFICATES ==="
 
 CA_DIR="/root/ca"
-OUT_DIR="/tmp/m3-certs"
+CERT_DIR="/tmp/m3-certs"
 
-rm -rf "$OUT_DIR"
-mkdir -p "$CA_DIR" "$OUT_DIR"
+rm -rf "$CERT_DIR"
+mkdir -p "$CA_DIR" "$CERT_DIR"
+
+echo "[1] Generate CA private key"
 
 openssl genrsa -out "$CA_DIR/au-team-ca.key" 4096
+
+echo "[2] Generate CA certificate"
 
 openssl req -x509 -new -nodes \
     -key "$CA_DIR/au-team-ca.key" \
@@ -48,6 +122,8 @@ openssl req -x509 -new -nodes \
     -days 3650 \
     -out "$CA_DIR/au-team-ca.crt" \
     -subj "/C=RU/ST=Moscow/L=Moscow/O=AU-TEAM/OU=IRPO/CN=AU-TEAM-CA"
+
+echo "[3] Create web certificate config"
 
 cat > "$CA_DIR/web.cnf" <<EOC
 [ req ]
@@ -73,12 +149,18 @@ DNS.1 = web.au-team.irpo
 DNS.2 = docker.au-team.irpo
 EOC
 
+echo "[4] Generate web private key"
+
 openssl genrsa -out "$CA_DIR/web.key" 4096
+
+echo "[5] Generate CSR"
 
 openssl req -new \
     -key "$CA_DIR/web.key" \
     -out "$CA_DIR/web.csr" \
     -config "$CA_DIR/web.cnf"
+
+echo "[6] Sign web certificate for 30 days"
 
 openssl x509 -req \
     -in "$CA_DIR/web.csr" \
@@ -91,45 +173,56 @@ openssl x509 -req \
     -extensions req_ext \
     -extfile "$CA_DIR/web.cnf"
 
-cp "$CA_DIR/au-team-ca.crt" "$OUT_DIR/"
-cp "$CA_DIR/web.crt" "$OUT_DIR/"
-cp "$CA_DIR/web.key" "$OUT_DIR/"
+cp "$CA_DIR/au-team-ca.crt" "$CERT_DIR/"
+cp "$CA_DIR/web.crt" "$CERT_DIR/"
+cp "$CA_DIR/web.key" "$CERT_DIR/"
 
-chmod 644 "$OUT_DIR/au-team-ca.crt" "$OUT_DIR/web.crt"
-chmod 600 "$OUT_DIR/web.key"
+chmod 644 "$CERT_DIR/au-team-ca.crt" "$CERT_DIR/web.crt"
+chmod 600 "$CERT_DIR/web.key"
 
-tar -czf /tmp/m3-certs.tar.gz -C "$OUT_DIR" .
-
-echo
-echo "=== HQ-SRV CERT CHECK ==="
-openssl x509 -in "$OUT_DIR/web.crt" -noout -subject -issuer -dates
-openssl x509 -in "$OUT_DIR/web.crt" -noout -text | grep -A2 "Subject Alternative Name"
+tar -czf /tmp/m3-certs.tar.gz -C "$CERT_DIR" .
 
 echo
-echo "=== HQ-SRV FILES ==="
-ls -la "$OUT_DIR"
+echo "=== CERTIFICATE CHECK ==="
+openssl x509 -in "$CERT_DIR/web.crt" -noout -subject -issuer -dates
+openssl x509 -in "$CERT_DIR/web.crt" -noout -text | grep -A2 "Subject Alternative Name"
+
+echo
+echo "=== CREATED FILES ==="
+ls -la "$CERT_DIR"
 ls -la /tmp/m3-certs.tar.gz
 
-echo "[OK] HQ-SRV certificates created"
+echo "[OK] HQ-SRV CA and certificates created"
 EOF
 
-echo "=== CREATE ISP REMOTE SCRIPT ==="
+echo
+echo "=== CREATE REMOTE SCRIPT FOR ISP ==="
 
-cat > "$WORKDIR/isp-https.sh" <<'EOF'
+cat > "$WORKDIR/isp-configure-https.sh" <<'EOF'
 #!/bin/bash
 set -e
 
-echo "=== ISP: CONFIGURE NGINX HTTPS ==="
+echo "=== ISP: CONFIGURE HTTPS NGINX ==="
 
-mkdir -p /etc/nginx/ssl
-tar -xzf /tmp/m3-certs.tar.gz -C /etc/nginx/ssl
+CERT_ARCHIVE="/tmp/m3-certs.tar.gz"
+SSL_DIR="/etc/nginx/ssl"
 
-chmod 644 /etc/nginx/ssl/au-team-ca.crt
-chmod 644 /etc/nginx/ssl/web.crt
-chmod 600 /etc/nginx/ssl/web.key
+if [ ! -f "$CERT_ARCHIVE" ]; then
+    echo "[ERROR] Certificate archive not found: $CERT_ARCHIVE"
+    exit 1
+fi
 
-cp /etc/nginx/sites-available.d/reverse-proxy.conf \
-   /etc/nginx/sites-available.d/reverse-proxy.conf.bak.$(date +%F_%H-%M-%S) 2>/dev/null || true
+mkdir -p "$SSL_DIR"
+tar -xzf "$CERT_ARCHIVE" -C "$SSL_DIR"
+
+chmod 644 "$SSL_DIR/au-team-ca.crt"
+chmod 644 "$SSL_DIR/web.crt"
+chmod 600 "$SSL_DIR/web.key"
+
+if [ -f /etc/nginx/sites-available.d/reverse-proxy.conf ]; then
+    cp /etc/nginx/sites-available.d/reverse-proxy.conf \
+       /etc/nginx/sites-available.d/reverse-proxy.conf.bak.$(date +%F_%H-%M-%S)
+fi
 
 cat > /etc/nginx/sites-available.d/reverse-proxy.conf <<'NGINX'
 server {
@@ -177,118 +270,64 @@ systemctl restart nginx
 
 echo
 echo "=== ISP HTTPS CHECK ==="
-ss -tulpn | grep -E ":443|nginx" || true
-
-echo
-echo "=== ISP NGINX CONFIG ==="
-cat /etc/nginx/sites-available.d/reverse-proxy.conf
+ss -tulpn | grep 443 || true
+curl -k -I https://web.au-team.irpo 2>/dev/null | head || true
+curl -k -I https://docker.au-team.irpo 2>/dev/null | head || true
 
 echo "[OK] ISP nginx HTTPS configured"
 EOF
 
-chmod +x "$WORKDIR/"*.sh
-
-expect_scp_to() {
-    local SRC="$1"
-    local DST="$2"
-    local IP="$3"
-
-expect <<EOF
-set timeout 60
-spawn scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$SRC" ${ROOT_USER}@${IP}:"$DST"
-expect {
-    "yes/no" {
-        send "yes\r"
-        exp_continue
-    }
-    "assword:" {
-        send "${ROOT_PASS}\r"
-    }
-}
-expect eof
-EOF
-}
-
-expect_scp_from() {
-    local IP="$1"
-    local SRC="$2"
-    local DST="$3"
-
-expect <<EOF
-set timeout 60
-spawn scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${ROOT_USER}@${IP}:"$SRC" "$DST"
-expect {
-    "yes/no" {
-        send "yes\r"
-        exp_continue
-    }
-    "assword:" {
-        send "${ROOT_PASS}\r"
-    }
-}
-expect eof
-EOF
-}
-
-expect_ssh_run() {
-    local IP="$1"
-    local CMD="$2"
-
-expect <<EOF
-set timeout 180
-spawn ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${ROOT_USER}@${IP} "$CMD"
-expect {
-    "yes/no" {
-        send "yes\r"
-        exp_continue
-    }
-    "assword:" {
-        send "${ROOT_PASS}\r"
-    }
-}
-expect eof
-EOF
-}
+chmod +x "$WORKDIR/hq-create-ca.sh" "$WORKDIR/isp-configure-https.sh"
 
 echo
-echo "=== STEP 1: COPY AND RUN SCRIPT ON HQ-SRV ==="
+echo "=== STEP 1: COPY CA SCRIPT TO HQ-SRV ==="
 
-expect_scp_to "$WORKDIR/hq-ca-create.sh" "/tmp/hq-ca-create.sh" "$HQ_SRV_IP"
-expect_ssh_run "$HQ_SRV_IP" "chmod +x /tmp/hq-ca-create.sh && bash /tmp/hq-ca-create.sh"
-
-echo
-echo "=== STEP 2: DOWNLOAD CERTS FROM HQ-SRV TO BR-SRV ==="
-
-expect_scp_from "$HQ_SRV_IP" "/tmp/m3-certs.tar.gz" "$WORKDIR/m3-certs.tar.gz"
+copy_to "$WORKDIR/hq-create-ca.sh" "$HQ_SRV_IP" "$HQ_SRV_PORT" "/tmp/hq-create-ca.sh"
 
 echo
-echo "=== CERT ARCHIVE CHECK ON BR-SRV ==="
+echo "=== STEP 2: RUN CA SCRIPT ON HQ-SRV ==="
+
+run_ssh "$HQ_SRV_IP" "$HQ_SRV_PORT" "chmod +x /tmp/hq-create-ca.sh && bash /tmp/hq-create-ca.sh"
+
+echo
+echo "=== STEP 3: DOWNLOAD CERT ARCHIVE FROM HQ-SRV ==="
+
+copy_from "$HQ_SRV_IP" "$HQ_SRV_PORT" "/tmp/m3-certs.tar.gz" "$WORKDIR/m3-certs.tar.gz"
+
+echo
+echo "=== STEP 4: CHECK CERT ARCHIVE ON BR-SRV ==="
+
 tar -tzf "$WORKDIR/m3-certs.tar.gz"
 
 echo
-echo "=== STEP 3: COPY CERTS AND CONFIGURE ISP ==="
+echo "=== STEP 5: COPY CERT ARCHIVE TO ISP ==="
 
-expect_scp_to "$WORKDIR/m3-certs.tar.gz" "/tmp/m3-certs.tar.gz" "$ISP_IP"
-expect_scp_to "$WORKDIR/isp-https.sh" "/tmp/isp-https.sh" "$ISP_IP"
-expect_ssh_run "$ISP_IP" "chmod +x /tmp/isp-https.sh && bash /tmp/isp-https.sh"
+copy_to "$WORKDIR/m3-certs.tar.gz" "$ISP_IP" "$ISP_PORT" "/tmp/m3-certs.tar.gz"
 
 echo
-echo "=== FINAL CHECK COMMANDS ==="
+echo "=== STEP 6: COPY HTTPS SCRIPT TO ISP ==="
+
+copy_to "$WORKDIR/isp-configure-https.sh" "$ISP_IP" "$ISP_PORT" "/tmp/isp-configure-https.sh"
+
+echo
+echo "=== STEP 7: RUN HTTPS SCRIPT ON ISP ==="
+
+run_ssh "$ISP_IP" "$ISP_PORT" "chmod +x /tmp/isp-configure-https.sh && bash /tmp/isp-configure-https.sh"
+
+echo
+echo "=== FINAL CHECKS ==="
+
 echo "На ISP:"
 echo "nginx -t"
 echo "ss -tulpn | grep 443"
+echo "cat /etc/nginx/sites-available.d/reverse-proxy.conf"
+
 echo
-echo "На HQ-CLI позже вручную нужно добавить доверие CA:"
-echo "CA лежит на ISP: /etc/nginx/ssl/au-team-ca.crt"
-echo "CA лежит на HQ-SRV: /root/ca/au-team-ca.crt"
-echo
-echo "Проверка из HQ-CLI после доверия CA:"
-echo "https://web.au-team.irpo"
-echo "https://docker.au-team.irpo"
-echo
-echo "Для web.au-team.irpo логин:"
-echo "WEB"
-echo "P@ssw0rd"
+echo "На HQ-CLI:"
+echo "Пока браузер будет ругаться, пока не доверим корневой CA."
+echo "CA лежит на:"
+echo "HQ-SRV: /root/ca/au-team-ca.crt"
+echo "ISP:    /etc/nginx/ssl/au-team-ca.crt"
 
 echo
 echo "=== M3 TASK 2 DONE ==="
