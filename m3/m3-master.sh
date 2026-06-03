@@ -521,7 +521,8 @@ run_ssh_root "$ISP_IP" "$ISP_PORT" "chmod +x /tmp/isp-configure-https.sh && bash
 
 echo "=== STEP 8: EXTRACT CA ON BR-SRV ==="
 rm -f "$WORKDIR/au-team-ca.crt"
-tar -xzf "$WORKDIR/m3-certs.tar.gz" -C "$WORKDIR" au-team-ca.crt
+tar -xzf "$WORKDIR/m3-certs.tar.gz" -C "$WORKDIR" ./au-team-ca.crt
+mv -f "$WORKDIR/./au-team-ca.crt" "$WORKDIR/au-team-ca.crt" 2>/dev/null || true
 
 echo "=== STEP 9: COPY CA TO HQ-CLI, TRUST IT AND REBOOT IF NEEDED ==="
 copy_to_cli "$WORKDIR/au-team-ca.crt" "$HQ_CLI_IP" "$HQ_CLI_PORT" "/tmp/au-team-ca.crt"
