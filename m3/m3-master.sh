@@ -202,7 +202,7 @@ reset_samba_password() {
         --newpassword='P@ssw0rd1' >/dev/null 2>&1 || true
 }
 
-if [ "$SAMBA_USERS_COUNT" -gt 299 ] || [ "$IMPORTED_DOT_USERS_COUNT" -ge "$CSV_USERS" ]; then
+if [ "$SAMBA_USERS_COUNT" -gt 299 ] || [ "$IMPORTED_DOT_USERS_COUNT" -ge 299 ]; then
     echo "[OK] Users already imported, skipping user import"
 
     for USER in Malachi.Alexander Nelle.Alford Meredith.Arnold Stuart.York; do
@@ -521,8 +521,21 @@ run_ssh_root "$ISP_IP" "$ISP_PORT" "chmod +x /tmp/isp-configure-https.sh && bash
 
 echo "=== STEP 8: EXTRACT CA ON BR-SRV ==="
 rm -f "$WORKDIR/au-team-ca.crt"
-tar -xzf "$WORKDIR/m3-certs.tar.gz" -C "$WORKDIR" ./au-team-ca.crt
-mv -f "$WORKDIR/./au-team-ca.crt" "$WORKDIR/au-team-ca.crt" 2>/dev/null || true
+rm -rf "$WORKDIR/certs-extract"
+mkdir -p "$WORKDIR/certs-extract"
+tar -xzf "$WORKDIR/m3-certs.tar.gz" -C "$WORKDIR/certs-extract"
+
+FOUND_CA="$(find "$WORKDIR/certs-extract" -name 'au-team-ca.crt' -type f | head -1)"
+
+if [ -z "$FOUND_CA" ]; then
+    echo "[ERROR] au-team-ca.crt not found in archive"
+    tar -tzf "$WORKDIR/m3-certs.tar.gz"
+    exit 1
+fi
+
+cp "$FOUND_CA" "$WORKDIR/au-team-ca.crt"
+chmod 644 "$WORKDIR/au-team-ca.crt"
+ls -la "$WORKDIR/au-team-ca.crt"
 
 echo "=== STEP 9: COPY CA TO HQ-CLI, TRUST IT AND REBOOT IF NEEDED ==="
 copy_to_cli "$WORKDIR/au-team-ca.crt" "$HQ_CLI_IP" "$HQ_CLI_PORT" "/tmp/au-team-ca.crt"
