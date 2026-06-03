@@ -115,8 +115,23 @@ curl -L https://raw.githubusercontent.com/lokis63573/banan/main/m2/br-srv.sh -o 
 chmod +x /root/br-srv.sh
 bash /root/br-srv.sh
 ```
- 
 
+Далее заходим на клиента, заходим в браузер вбиваем 
+
+```
+http://web.au-team.irpo
+```
+логи
+```
+WEB
+```
+пароль
+```
+P@ssw0rd
+```
+и проверяем что видим именно эту картину
+
+<img width="772" height="551" alt="image" src="https://github.com/user-attachments/assets/7606d7b2-bf9a-4e8b-9f79-76dc5b824529" />
 
  
 
