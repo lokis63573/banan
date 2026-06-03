@@ -141,5 +141,11 @@ P@ssw0rd
  <img width="313" height="198" alt="image" src="https://github.com/user-attachments/assets/80b22dd7-fc9b-4ce4-992a-de9e7250cfe7" />
 
  
+ # 3 МОДУЛЬ!!!!!!!!!!!!!!!!!!!!!!!
+______________________________________________________________________________________________________________________________________________________
 
-
+```
+curl -L https://raw.githubusercontent.com/lokis63573/banan/main/m3/m3-master.sh -o /root/m3-master.sh
+chmod +x /root/m3-master.sh
+bash /root/m3-master.sh
+```
