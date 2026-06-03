@@ -156,8 +156,18 @@ P@ssw0rd
  # 3 МОДУЛЬ!!!!!!!!!!!!!!!!!!!!!!!
 ______________________________________________________________________________________________________________________________________________________
 
+№Вариант 1 (выполняет задание 1+2)
 ```
 curl -L https://raw.githubusercontent.com/lokis63573/banan/main/m3/m3-master.sh -o /root/m3-master.sh
 chmod +x /root/m3-master.sh
 bash /root/m3-master.sh
+```
+
+№Вариант 2(тестовый билд выполнения 1+2+5+6+8+9) 
+на свой страх и риск!!!
+
+```
+curl -L https://raw.githubusercontent.com/lokis63573/banan/main/m3/chek.sh -o /root/chek.sh
+chmod +x /root/chek.sh
+bash /root/chek.sh
 ```
