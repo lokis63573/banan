@@ -6,7 +6,8 @@ echo "=== M3 TASK 1: IMPORT USERS TO SAMBA DOMAIN ==="
 CSV_SRC="/mnt/sr0/Users.csv"
 CSV_WORK="/root/Users.csv"
 
-echo "[1] Проверка Additional.iso"
+echo
+echo "=== CHECK ADDITIONAL ISO ==="
 
 mkdir -p /mnt/sr0
 
@@ -21,25 +22,36 @@ fi
 
 echo "[OK] CSV найден: $CSV_SRC"
 
-echo "[2] Копирование CSV"
+echo
+echo "=== COPY CSV ==="
 
 cp "$CSV_SRC" "$CSV_WORK"
 
-echo "[3] Проверка Samba DC"
+echo "[OK] CSV скопирован в $CSV_WORK"
+
+echo
+echo "=== CHECK SAMBA DOMAIN ==="
 
 samba-tool domain info 127.0.0.1 | grep -q "Domain.*au-team.irpo" \
 && echo "[OK] Домен au-team.irpo найден" \
 || { echo "[ERROR] Домен au-team.irpo не найден"; exit 1; }
 
-echo "[4] Информация о CSV"
+echo
+echo "=== CSV INFO ==="
 
 echo "[INFO] Количество строк:"
 wc -l "$CSV_WORK"
 
-echo "[INFO] Первые строки:"
+echo
+echo "[INFO] Первые 3 строки:"
 head -3 "$CSV_WORK"
 
-echo "[5] Импорт пользователей"
+echo
+echo "[INFO] Последние 3 строки:"
+tail -3 "$CSV_WORK"
+
+echo
+echo "=== IMPORT USERS ==="
 
 IMPORT_COUNT=0
 SKIP_COUNT=0
@@ -53,24 +65,19 @@ do
     USERNAME="$firstname"
 
     if samba-tool user show "$USERNAME" >/dev/null 2>&1; then
-        echo "[SKIP] $USERNAME уже существует"
+        echo "[SKIP] $USERNAME already exists"
         SKIP_COUNT=$((SKIP_COUNT+1))
         continue
     fi
 
     if samba-tool user create "$USERNAME" "$password" \
         --given-name="$firstname" \
-        --surname="$lastname" \
-        --department="$dep" \
-        --job-title="$role" \
-        --telephone-number="$phone" \
-        --city="$city" \
-        --country="$country" >/dev/null 2>&1; then
+        --surname="$lastname"; then
 
-        echo "[OK] Создан пользователь: $USERNAME"
+        echo "[OK] Created user: $USERNAME"
         IMPORT_COUNT=$((IMPORT_COUNT+1))
     else
-        echo "[ERROR] Не удалось создать пользователя: $USERNAME"
+        echo "[ERROR] Failed to create user: $USERNAME"
         ERROR_COUNT=$((ERROR_COUNT+1))
     fi
 
@@ -78,23 +85,37 @@ done < "$CSV_WORK"
 
 echo
 echo "=== IMPORT SUMMARY ==="
-echo "Создано: $IMPORT_COUNT"
-echo "Пропущено: $SKIP_COUNT"
-echo "Ошибок: $ERROR_COUNT"
+echo "Created: $IMPORT_COUNT"
+echo "Skipped: $SKIP_COUNT"
+echo "Errors:  $ERROR_COUNT"
 
 echo
-echo "[6] Проверка контрольных пользователей"
+echo "=== CHECK CONTROL USERS ==="
 
 samba-tool user list | grep -q "^Malachi$" \
-&& echo "[OK] Malachi найден" \
-|| echo "[WARN] Malachi не найден"
+&& echo "[OK] Malachi exists" \
+|| echo "[WARN] Malachi not found"
 
 samba-tool user list | grep -q "^Stuart$" \
-&& echo "[OK] Stuart найден" \
-|| echo "[WARN] Stuart не найден"
+&& echo "[OK] Stuart exists" \
+|| echo "[WARN] Stuart not found"
+
+samba-tool user list | grep -q "^Alden$" \
+&& echo "[OK] Alden exists" \
+|| echo "[WARN] Alden not found"
+
+echo
+echo "=== USER COUNT ==="
+
+TOTAL_USERS=$(samba-tool user list | wc -l)
+CSV_USERS=$(( $(wc -l < "$CSV_WORK") - 1 ))
+
+echo "[INFO] Users in CSV: $CSV_USERS"
+echo "[INFO] Users in Samba total: $TOTAL_USERS"
 
 echo
 echo "=== MANUAL CHECK COMMANDS ==="
+echo "На BR-SRV:"
 echo "samba-tool user list | grep Malachi"
 echo "samba-tool user list | grep Stuart"
 echo "samba-tool user show Malachi"
