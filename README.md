@@ -115,6 +115,18 @@ curl -L https://raw.githubusercontent.com/lokis63573/banan/main/m2/br-srv.sh -o 
 chmod +x /root/br-srv.sh
 bash /root/br-srv.sh
 ```
+если не работает 1 команда на скачивание то заходим в 
+```
+mcedit /etc/net/ifaces/ens3/resolv.conf 
+```
+и дописываем:
+```
+nameserver 77.88.8.8
+```
+после чего 
+```
+systemctl restart network
+```
 
 Далее заходим на клиента, заходим в браузер вбиваем 
 
