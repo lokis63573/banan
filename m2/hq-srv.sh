@@ -3,6 +3,32 @@ set -e
 
 echo "=== M2 HQ-SRV START ==="
 
+if [ "$(id -u)" -ne 0 ]; then
+    echo "[ERROR] Скрипт должен быть запущен через sudo/root"
+    exit 1
+fi
+
+install_pkg_if_missing() {
+    local PKG="$1"
+
+    if rpm -q "$PKG" >/dev/null 2>&1; then
+        echo "[OK] $PKG already installed"
+        return 0
+    fi
+
+    echo "[INFO] $PKG not installed, trying apt-get install..."
+    if apt-get install -y "$PKG"; then
+        echo "[OK] $PKG installed"
+        return 0
+    fi
+
+    echo "[WARN] $PKG install failed, running apt-get update..."
+    apt-get update || true
+
+    echo "[INFO] Trying to install $PKG again..."
+    apt-get install -y "$PKG"
+}
+
 echo "[1] Настройка NFS"
 
 mkdir -p /raid/nfs
@@ -11,7 +37,6 @@ chmod 777 /raid/nfs
 sed -i 's#(rw,sync,no_root_squash)#(rw,sync,no_subtree_check,no_root_squash)#g' /etc/exports
 
 exportfs -ra
-exportfs -v
 systemctl restart nfs-server
 
 echo "[2] Монтирование Additional.iso"
@@ -32,10 +57,10 @@ fi
 
 echo "[OK] WEB_SRC=$WEB_SRC"
 
-echo "[3] Установка PHP-модулей"
+echo "[3] Установка недостающих PHP-модулей"
 
-apt-get update
-apt-get install -y apache2-mod_php8.2 php8.2-mysqlnd-mysqli
+install_pkg_if_missing apache2-mod_php8.2
+install_pkg_if_missing php8.2-mysqlnd-mysqli
 
 a2dismod httpd-worker || true
 a2enmod httpd-prefork || true
@@ -137,7 +162,7 @@ php -m | grep -Eq "mysqli|mysqlnd" \
 && echo "[OK] PHP mysql module detected" \
 || { echo "[ERROR] PHP mysql module missing"; exit 1; }
 
-curl -s http://localhost | grep -Eq "html|DOCTYPE|сотрудник|студент|Access forbidden" \
+curl -s http://localhost | grep -Eq "html|DOCTYPE|сотрудник|студент|Очень|Access forbidden" \
 && echo "[OK] Apache responds" \
 || { echo "[ERROR] Apache does not respond"; exit 1; }
 
@@ -157,7 +182,7 @@ echo "=== CLEAN HISTORY AND DELAYED CLEAR ==="
 
 history -c 2>/dev/null || true
 
-TTY_DEVICE="$(tty)"
+TTY_DEVICE="$(tty 2>/dev/null || echo /dev/null)"
 
 (
     sleep 60
