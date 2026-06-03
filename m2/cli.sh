@@ -17,6 +17,11 @@ if ! command -v expect >/dev/null 2>&1; then
     }
 fi
 
+if ! command -v expect >/dev/null 2>&1; then
+    echo "expect не установился"
+    exit 1
+fi
+
 configure_client() {
     local NAME="$1"
     local IP="$2"
@@ -71,13 +76,16 @@ send "sed -i '/- : ${DENY_GROUP} : ALL/d' /etc/security/access.conf\r"
 expect "#"
 send "sed -i '/- : @${DENY_GROUP} : ALL/d' /etc/security/access.conf\r"
 expect "#"
-send "grep -q '^- : @${DENY_GROUP} : ALL' /etc/security/access.conf || echo '- : @${DENY_GROUP} : ALL' >> /etc/security/access.conf\r"
+send "sed -i '/- : (${DENY_GROUP}) : ALL/d' /etc/security/access.conf\r"
+expect "#"
+send "grep -q '^- : (${DENY_GROUP}) : ALL' /etc/security/access.conf || echo '- : (${DENY_GROUP}) : ALL' >> /etc/security/access.conf\r"
 expect "#"
 
 send "grep -q 'pam_access.so' /etc/pam.d/login || echo 'account required pam_access.so' >> /etc/pam.d/login\r"
 expect "#"
 send "grep -q 'pam_access.so' /etc/pam.d/sshd || echo 'account required pam_access.so' >> /etc/pam.d/sshd\r"
 expect "#"
+
 send "systemctl restart sshd 2>/dev/null || true\r"
 expect "#"
 
@@ -110,11 +118,35 @@ EOF
     echo "===== $NAME DONE ====="
 }
 
-configure_client "HQ-CLI" "$HQ_CLI_IP" "172.16.1.1" "br" "yes"
-configure_client "BR-CLI" "$BR_CLI_IP" "172.16.2.1" "hq" "no"
+reboot_client() {
+    local NAME="$1"
+    local IP="$2"
 
-echo
-echo "=== M2 CLI CHECK FROM BR-SRV ==="
+    echo
+    echo "===== REBOOT $NAME ====="
+
+expect << EOF
+set timeout 30
+
+spawn ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${ROOT_USER}@${IP}
+
+expect {
+    "yes/no" {
+        send "yes\r"
+        exp_continue
+    }
+    "assword:" {
+        send "${ROOT_PASS}\r"
+    }
+}
+
+expect "#"
+send "reboot\r"
+expect eof
+EOF
+
+    echo "===== $NAME REBOOT SENT ====="
+}
 
 check_sshuser() {
     local NAME="$1"
@@ -158,6 +190,19 @@ EOF
     echo "[OK] sshuser login works on $NAME"
 }
 
+configure_client "HQ-CLI" "$HQ_CLI_IP" "172.16.1.1" "br" "yes"
+configure_client "BR-CLI" "$BR_CLI_IP" "172.16.2.1" "hq" "no"
+
+reboot_client "HQ-CLI" "$HQ_CLI_IP" || true
+reboot_client "BR-CLI" "$BR_CLI_IP" || true
+
+echo
+echo "=== WAIT CLIENTS AFTER REBOOT ==="
+sleep 60
+
+echo
+echo "=== M2 CLI CHECK FROM BR-SRV ==="
+
 check_sshuser "HQ-CLI" "$HQ_CLI_IP"
 check_sshuser "BR-CLI" "$BR_CLI_IP"
 
@@ -167,6 +212,8 @@ echo "На HQ-CLI:"
 echo "grep pam_access /etc/pam.d/login"
 echo "grep pam_access /etc/pam.d/sshd"
 echo "tail -20 /etc/security/access.conf"
+echo "id hquser1"
+echo "id bruser1"
 echo "su - hquser1"
 echo "su - bruser1"
 
@@ -175,6 +222,8 @@ echo "На BR-CLI:"
 echo "grep pam_access /etc/pam.d/login"
 echo "grep pam_access /etc/pam.d/sshd"
 echo "tail -20 /etc/security/access.conf"
+echo "id bruser1"
+echo "id hquser1"
 echo "su - bruser1"
 echo "su - hquser1"
 
