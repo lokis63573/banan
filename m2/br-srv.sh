@@ -158,7 +158,27 @@ fi
 
 echo
 echo "=== M2 BR-SRV + CLI DONE ==="
+echo
+echo "=== START M2 HQ-SRV SCRIPT ==="
 
+if curl -fsSL https://raw.githubusercontent.com/lokis63573/banan/main/m2/hq-srv.sh -o /root/hq-srv.sh; then
+    chmod +x /root/hq-srv.sh
+
+    if ! command -v sshpass >/dev/null 2>&1; then
+        apt-get install -y sshpass || true
+    fi
+
+    sshpass -p 'P@ssw0rd' scp -P 2026 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null /root/hq-srv.sh sshuser@10.10.100.2:/tmp/hq-srv.sh
+
+    sshpass -p 'P@ssw0rd' ssh -p 2026 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null sshuser@10.10.100.2 \
+        "chmod +x /tmp/hq-srv.sh && sudo bash /tmp/hq-srv.sh"
+else
+    echo "[ERROR] Не удалось скачать hq-srv.sh"
+    exit 1
+fi
+
+echo
+echo "=== M2 HQ-SRV SCRIPT DONE ==="
 echo
 echo "=== CLEAN HISTORY AND DELAYED CLEAR ==="
 
@@ -174,4 +194,4 @@ TTY_DEVICE="$(tty)"
 echo "История команд очищена. Экран очистится через 1 минуту."
 
 echo
-echo "=== 2/4 МОДУЛЯ ВЫПОЛНЕНО ==="
+echo "=== 3/4 МОДУЛЯ ВЫПОЛНЕНО ==="
