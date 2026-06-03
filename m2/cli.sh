@@ -14,7 +14,7 @@ DOMAIN_ADMIN="Administrator"
 DOMAIN_PASS="P@ssw0rd"
 
 if ! command -v expect >/dev/null 2>&1; then
-    echo "[+] expect не найден, устанавливаю..."
+    echo "expect не найден, устанавливаю..."
     apt-get install -y expect || {
         apt-get update || true
         apt-get install -y expect
@@ -22,7 +22,7 @@ if ! command -v expect >/dev/null 2>&1; then
 fi
 
 if ! command -v expect >/dev/null 2>&1; then
-    echo "[-] expect не установился"
+    echo "expect не установился"
     exit 1
 fi
 
@@ -53,7 +53,7 @@ expect {
 
 expect "#"
 
-send "echo '[1] Chrony configure'\r"
+send "echo 'Chrony configure'\r"
 expect "#"
 send "sed -i '/^server /d; /^pool /d' /etc/chrony.conf\r"
 expect "#"
@@ -62,7 +62,7 @@ expect "#"
 send "systemctl restart chronyd\r"
 expect "#"
 
-send "echo '[2] Create sshuser for Ansible'\r"
+send "echo 'Create sshuser for Ansible'\r"
 expect "#"
 send "id sshuser >/dev/null 2>&1 || useradd -m sshuser\r"
 expect "#"
@@ -80,7 +80,7 @@ expect "#"
 send "visudo -cf /etc/sudoers.d/sshuser\r"
 expect "#"
 
-send "echo '[3] Rejoin domain ${DOMAIN}'\r"
+send "echo 'Rejoin domain ${DOMAIN}'\r"
 expect "#"
 send "systemctl stop sssd 2>/dev/null || true\r"
 expect "#"
@@ -95,7 +95,7 @@ expect "#"
 send "systemctl restart sssd 2>/dev/null || true\r"
 expect "#"
 
-send "echo '[4] PAM access configure'\r"
+send "echo 'PAM access configure'\r"
 expect "#"
 send "sed -i '/- : ${DENY_GROUP} : ALL/d' /etc/security/access.conf\r"
 expect "#"
@@ -115,7 +115,7 @@ expect "#"
 send "systemctl restart sshd 2>/dev/null || true\r"
 expect "#"
 
-send "echo '[5] Autofs NFS configure'\r"
+send "echo 'Autofs NFS configure'\r"
 expect "#"
 send "mkdir -p /mnt/nfs\r"
 expect "#"
@@ -129,7 +129,7 @@ send "systemctl restart autofs\r"
 expect "#"
 
 if { "${NEED_HQ_SUDO}" == "yes" } {
-    send "echo '[6] HQ limited sudo configure'\r"
+    send "echo 'HQ limited sudo configure'\r"
     expect "#"
     send "cat > /etc/sudoers.d/hq-limited <<'HQEOF'\r"
     send "%hq ALL=(root) NOPASSWD: /bin/cat, /bin/grep, /usr/bin/id\r"
@@ -141,7 +141,7 @@ if { "${NEED_HQ_SUDO}" == "yes" } {
     expect "#"
 }
 
-send "echo '[7] Local checks'\r"
+send "echo 'Local checks'\r"
 expect "#"
 send "realm list | head -20\r"
 expect "#"
