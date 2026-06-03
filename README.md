@@ -133,6 +133,13 @@ P@ssw0rd
 
 <img width="772" height="551" alt="image" src="https://github.com/user-attachments/assets/7606d7b2-bf9a-4e8b-9f79-76dc5b824529" />
 
+откройте консоль на hq-cli
+ поптайтесь войти bruser1 P@ssw0rd1
+ он не должен дать этого сделать,
+ после чего входите под hquser1 P@ssw0rd1
+ задайте вопрос экспертам, в консоли не даёт, а в графике даёт зайти, это будет считаться как выполнение задания?
+ <img width="313" height="198" alt="image" src="https://github.com/user-attachments/assets/80b22dd7-fc9b-4ce4-992a-de9e7250cfe7" />
+
  
 
 
