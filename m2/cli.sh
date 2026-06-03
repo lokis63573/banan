@@ -89,14 +89,19 @@ send "sed -i '/- : ${DENY_PREFIX}user4 : ALL/d' /etc/security/access.conf\r"
 expect "#"
 send "sed -i '/- : ${DENY_PREFIX}user5 : ALL/d' /etc/security/access.conf\r"
 expect "#"
+send -- "echo '- : ${DENY_PREFIX}user1 : ALL' >> /etc/security/access.conf\r"
+expect "#"
 
-send "cat >> /etc/security/access.conf <<'ACCESSEOF'\r"
-send "- : ${DENY_PREFIX}user1 : ALL\r"
-send "- : ${DENY_PREFIX}user2 : ALL\r"
-send "- : ${DENY_PREFIX}user3 : ALL\r"
-send "- : ${DENY_PREFIX}user4 : ALL\r"
-send "- : ${DENY_PREFIX}user5 : ALL\r"
-send "ACCESSEOF\r"
+send -- "echo '- : ${DENY_PREFIX}user2 : ALL' >> /etc/security/access.conf\r"
+expect "#"
+
+send -- "echo '- : ${DENY_PREFIX}user3 : ALL' >> /etc/security/access.conf\r"
+expect "#"
+
+send -- "echo '- : ${DENY_PREFIX}user4 : ALL' >> /etc/security/access.conf\r"
+expect "#"
+
+send -- "echo '- : ${DENY_PREFIX}user5 : ALL' >> /etc/security/access.conf\r"
 expect "#"
 
 send "grep -q 'pam_access.so' /etc/pam.d/login || echo 'account required pam_access.so' >> /etc/pam.d/login\r"
