@@ -35,16 +35,12 @@ systemctl restart network
 ```
 ping 10.20.20.1
 ```
-(На случай, если неправильно написали ip:
+ЕСЛИ ошиблись в написании ip, ТО :
 ```
 rm /etc/net/ifaces/ens3/*имя файлы
 yes
-```
-затем пишите
-```
 systemctl restart network
 ```
-)
 # заходим на br-cli
 настраиваем ip адрес
 Теперь настроим ospf на br-fw
