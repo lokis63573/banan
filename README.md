@@ -171,3 +171,4 @@ curl -L https://raw.githubusercontent.com/lokis63573/banan/main/m3/chek.sh -o /r
 chmod +x /root/chek.sh
 bash /root/chek.sh
 ```
+
