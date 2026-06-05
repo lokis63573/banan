@@ -35,6 +35,7 @@ systemctl restart network
 ```
 ping 10.20.20.1
 ```
+Смотрите внимательно
 ЕСЛИ ошиблись в написании ip, ТО :
 ```
 rm /etc/net/ifaces/ens3/*имя файлы
