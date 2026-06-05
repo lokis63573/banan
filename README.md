@@ -15,7 +15,7 @@ bash /root/isp.sh
 echo 10.10.100.2/27 > /etc/net/ifaces/ens3/ipv4address 
 echo default via 10.10.100.1 > /etc/net/ifaces/ens3/ipv4route   
 echo nameserver 10.10.100.2 > /etc/net/ifaces/ens3/resolv.conf
-echo nameserver 77.88.8.8 > /etc/net/ifaces/ens3/resolv.conf
+echo nameserver 77.88.8.8 >> /etc/net/ifaces/ens3/resolv.conf
 systemctl restart network
 ```
 проверьте что все правильно
@@ -27,7 +27,7 @@ ping 10.10.100.1
 echo 10.20.20.2/28 > /etc/net/ifaces/ens3/ipv4address 
 echo default via 10.20.20.1 > /etc/net/ifaces/ens3/ipv4route   
 echo nameserver 10.10.100.2 > /etc/net/ifaces/ens3/resolv.conf
-echo nameserver 77.88.8.8 > /etc/net/ifaces/ens3/resolv.conf
+echo nameserver 77.88.8.8 >> /etc/net/ifaces/ens3/resolv.conf
 systemctl restart network
 ```
 
