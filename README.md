@@ -3,6 +3,8 @@
 _____________________________________________________________________________________________________________________________________________________________________________________
 
 # заходим на isp и пишем
+login root
+pass toor
 
 
 ```
@@ -11,6 +13,8 @@ chmod +x /root/isp.sh
 bash /root/isp.sh
 ```
 # заходим на hq-srv
+login root
+pass toor
 ```
 echo 10.10.100.2/27 > /etc/net/ifaces/ens3/ipv4address 
 echo default via 10.10.100.1 > /etc/net/ifaces/ens3/ipv4route   
@@ -23,6 +27,8 @@ systemctl restart network
 ping 10.10.100.1
 ```
 # заходим на br-srv
+login root
+pass toor
 ```
 echo 10.20.20.2/28 > /etc/net/ifaces/ens3/ipv4address 
 echo default via 10.20.20.1 > /etc/net/ifaces/ens3/ipv4route   
@@ -43,6 +49,10 @@ yes
 systemctl restart network
 ```
 # заходим на br-cli
+login user
+pass resu
+---login root
+---pass toor
 настраиваем ip адрес
 Теперь настроим ospf на br-fw
  <img width="534" height="245" alt="image" src="https://github.com/user-attachments/assets/533105cf-b219-4fbe-be35-452e024d8f43" />
@@ -125,8 +135,9 @@ systemctl restart network
  # 3 МОДУЛЬ!!!!!!!!!!!!!!!!!!!!!!!
 ______________________________________________________________________________________________________________________________________________________
 
-(тестовый билд выполнены 1+2+5+6+8+9 задания)
 
+(тестовый билд выполнены 1+2+5+6+8+9 задания)
+На BR-srv
 ```
 curl -L https://raw.githubusercontent.com/lokis63573/banan/main/m3/chek.sh -o /root/chek.sh
 chmod +x /root/chek.sh
