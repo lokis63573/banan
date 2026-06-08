@@ -80,6 +80,8 @@ pass resu
 Вам может сказать, что сайт опасный, но на него всё же надо зайти.
 Дальше будет вкладка авторизации. Вам будет выдана бумажка. Нам нужно смотреть в :”Учётные записи ВМ”, Ideco NGFW
 Дальше открываете меню и пишите название.
+admin
+IdecoP@ssw0rd (1 большая буква)
 
  <img width="453" height="331" alt="image" src="https://github.com/user-attachments/assets/2898079a-7907-40eb-b9f3-d2659108c5a2" />
  <img width="420" height="192" alt="image" src="https://github.com/user-attachments/assets/79ab7674-4945-4bd1-bf6d-115f1b7f7cf3" />
@@ -95,8 +97,12 @@ pass resu
  Далее проверяем!!!
  <img width="933" height="645" alt="image" src="https://github.com/user-attachments/assets/991cda32-4d48-4206-ab35-22f97359497a" />
  <img width="974" height="276" alt="image" src="https://github.com/user-attachments/assets/e66cea07-a149-4c7b-a803-f43d358f275f" />
+ (не обязательно)зайдите на br-rtr, проверить что поднялся ospf
+ en
+ show ip ospf neighbor
 
 # заходим на hq-srv
+
 ```
 curl -L https://raw.githubusercontent.com/lokis63573/banan/main/m1/hq-srv.sh -o /root/hq-srv.sh
 chmod +x /root/hq-srv.sh
