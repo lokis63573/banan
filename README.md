@@ -8,10 +8,12 @@ pass toor
 
 
 ```
-curl -L https://raw.githubusercontent.com/lokis63573/banan/main/m1/isp.sh -o /root/isp.sh
-chmod +x /root/isp.sh
+curl -fsSL https://raw.githubusercontent.com/lokis63573/banan/test/m1/isp.sh -o /root/isp.sh &&
+chmod +x /root/isp.sh &&
 bash /root/isp.sh
 ```
+Этот скрипт настраивает ISP, HQ-RTR и BR-RTR. Отдельно скачивать и запускать `hq-rtr.sh` не нужно.
+
 # заходим на hq-srv
 login root
 pass toor
